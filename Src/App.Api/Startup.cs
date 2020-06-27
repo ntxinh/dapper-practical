@@ -25,8 +25,13 @@ namespace App.Api
         // This method gets called by the runtime. Use this method to add services to the container.
         public void ConfigureServices(IServiceCollection services)
         {
-            services.AddScoped<ICustomerRepository>(x =>
-                new CustomerRepository("Customers", x.GetRequiredService<IConfiguration>()));
+            // #1
+            // services.AddScoped<ICustomerRepository>(x =>
+            //     new CustomerRepository("Customers", x.GetRequiredService<IConfiguration>()));
+
+            // #2
+            services.AddScoped<ICustomerRepository, CustomerRepository>();
+            services.AddScoped<ITodoRepository, TodoRepository>();
 
             services.AddControllers();
 

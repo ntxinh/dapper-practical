@@ -14,13 +14,25 @@ namespace App.Api.Repositories
 {
     public abstract class GenericRepository<T> : IGenericRepository<T> where T : class
     {
-        private readonly string _tableName;
+        // #1
+        // private readonly string _tableName;
+
+        // #2
+        public abstract string _tableName { get; }
+
         private readonly IConfiguration _config;
         private const string PrimaryKey = "Id";
 
-        protected GenericRepository(string tableName, IConfiguration config)
+        // #1
+        // protected GenericRepository(string tableName, IConfiguration config)
+        // {
+        //     _tableName = tableName;
+        //     _config = config;
+        // }
+
+        // #2
+        protected GenericRepository(IConfiguration config)
         {
-            _tableName = tableName;
             _config = config;
         }
         /// <summary>

@@ -6,6 +6,9 @@ namespace App.Api.Repositories
 {
     public interface IGenericRepository<T>
     {
+        // #2
+        string _tableName { get; }
+
         Task<IEnumerable<T>> GetAllAsync();
         Task DeleteRowAsync(Guid id);
         Task<T> GetAsync(Guid id);

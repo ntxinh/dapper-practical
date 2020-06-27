@@ -1,3 +1,4 @@
+DROP TABLE [dbo].[Customers]
 CREATE TABLE [dbo].[Customers]
 (
     [Id] INT IDENTITY (1, 1) NOT NULL,
@@ -5,4 +6,17 @@ CREATE TABLE [dbo].[Customers]
     [LastName] NVARCHAR (MAX) NULL,
     [Email] NVARCHAR (MAX) NULL,
     CONSTRAINT [PK_dbo.Customers] PRIMARY KEY CLUSTERED ([Id] ASC)
+);
+
+DROP TABLE [dbo].[Todos]
+CREATE TABLE [dbo].[Todos]
+(
+    [Id] INT IDENTITY (1, 1) NOT NULL,
+    [Name] NVARCHAR (MAX) NULL,
+    [Description] NVARCHAR (MAX) NULL,
+    [Status] NVARCHAR (MAX) NULL,
+    [DueDate] [datetime2](7) NOT NULL,
+    [DateCreated] [datetime2](7) NOT NULL,
+    [DateModified] [datetime2](7) NULL,
+    CONSTRAINT [PK_dbo.Todos] PRIMARY KEY CLUSTERED ([Id] ASC)
 );
