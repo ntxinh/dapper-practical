@@ -42,7 +42,8 @@ namespace App.Api
             }
 
             app.UseOpenApi();
-            app.UseSwaggerUi3();
+            app.UseSwaggerUi3(x => x.DocExpansion = "list");
+            app.UseReDoc();
 
             // app.UseHttpsRedirection();
 

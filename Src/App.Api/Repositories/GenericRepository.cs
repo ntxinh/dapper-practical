@@ -16,6 +16,7 @@ namespace App.Api.Repositories
     {
         private readonly string _tableName;
         private readonly IConfiguration _config;
+        private const string PrimaryKey = "Id";
 
         protected GenericRepository(string tableName, IConfiguration config)
         {
@@ -122,7 +123,7 @@ namespace App.Api.Repositories
                     let attributes = prop.GetCustomAttributes(typeof(DescriptionAttribute), false)
                     where (attributes.Length <= 0
                         || (attributes[0] as DescriptionAttribute)?.Description != "ignore")
-                        && prop.Name != "Id"
+                        && prop.Name != PrimaryKey
                     select prop.Name).ToList();
         }
 
