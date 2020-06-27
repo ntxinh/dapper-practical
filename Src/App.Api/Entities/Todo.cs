@@ -1,10 +1,9 @@
 using System;
 
-namespace App.Api.Models
+namespace App.Api.Entities
 {
-    public class Todo
+    public class Todo : BaseEntityAudit
     {
-        public int Id { get; set; }
         public string Name { get; set; }
         public string Description { get; set; }
         public int Status { get; set; }

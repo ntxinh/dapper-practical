@@ -1,4 +1,4 @@
-using App.Api.Models;
+using App.Api.Entities;
 using Microsoft.Extensions.Configuration;
 
 namespace App.Api.Repositories

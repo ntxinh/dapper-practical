@@ -1,12 +1,8 @@
-using Dapper.Contrib.Extensions;
-
-namespace App.Api.Models
+namespace App.Api.Entities
 {
     // [Table("Customers")]
-    public class Customer
+    public class Customer : BaseEntityAudit
     {
-        [Key]
-        public int Id { get; set; }
         public string FirstName { get; set; }
         public string LastName { get; set; }
         public string Email { get; set; }

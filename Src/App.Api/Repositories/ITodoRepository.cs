@@ -1,4 +1,4 @@
-using App.Api.Models;
+using App.Api.Entities;
 
 namespace App.Api.Repositories
 {
