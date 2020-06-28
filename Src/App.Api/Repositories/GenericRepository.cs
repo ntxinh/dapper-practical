@@ -106,8 +106,6 @@ namespace App.Api.Repositories
             properties.Remove(SoftDeletedColumn);
             properties.Remove(nameof(BaseEntityAudit.CreatedAt));
             properties.Remove(nameof(BaseEntityAudit.CreatedBy));
-            properties.Remove(nameof(BaseEntityAudit.UpdatedAt));
-            properties.Remove(nameof(BaseEntityAudit.UpdatedBy));
 
             properties.ForEach(property =>
             {

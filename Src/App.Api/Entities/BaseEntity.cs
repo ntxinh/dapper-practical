@@ -3,7 +3,7 @@ namespace App.Api.Entities
     public abstract class BaseEntity
     {
         // [Key]
-        public int Id { get; protected set; }
+        public int Id { get; set; }
         public bool IsDeleted { get; set; }
 
         public override bool Equals(object obj)
