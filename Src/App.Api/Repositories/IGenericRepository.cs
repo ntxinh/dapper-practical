@@ -18,6 +18,24 @@ namespace App.Api.Repositories
         Task<int> UpdateByIdAsync(T entity);
         Task<int> DeleteByIdAsync(int id);
 
+        // Task<T> Get(int id);
+        // Task<T> Get(T entity);
+
+        // void Add(T entity);
+        // void Add(params T[] entities);
+        // void Add(IEnumerable<T> entities);
+
+        // void Delete(T entity);
+        // void Delete(object id);
+        // void Delete(params T[] entities);
+        // void Delete(params int[] entities);
+        // void Delete(IEnumerable<T> entities);
+        // void Delete(IEnumerable<int> entities);
+
+        // void Update(T entity);
+        // void Update(params T[] entities);
+        // void Update(IEnumerable<T> entities);
+
         // Advanced operations
         Task<int> DeleteSoftByIdAsync(int id);
         Task<IEnumerable<T>> GetAllSoftDeletedAsync();

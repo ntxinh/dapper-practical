@@ -3,13 +3,13 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Data;
 using System.Data.SqlClient;
-using System.Dynamic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
 using App.Api.Entities;
 using Dapper;
+using Dapper.Contrib.Extensions;
 using Microsoft.Extensions.Configuration;
 
 namespace App.Api.Repositories
@@ -126,7 +126,7 @@ namespace App.Api.Repositories
 
         private void UpdateSoftDelete(T entity, bool isDeleted)
         {
-            ((BaseEntityAudit)entity).IsDeleted = isDeleted;
+            entity.IsDeleted = isDeleted;
         }
 
         private void UpdateAudits(T entity, State state)
@@ -137,12 +137,12 @@ namespace App.Api.Repositories
 
             if (state == State.Added)
             {
-                ((BaseEntityAudit)entity).CreatedAt = now;
-                ((BaseEntityAudit)entity).CreatedBy = currentUserId;
+                entity.CreatedAt = now;
+                entity.CreatedBy = currentUserId;
             }
 
-            ((BaseEntityAudit)entity).UpdatedAt = now;
-            ((BaseEntityAudit)entity).UpdatedBy = currentUserId;
+            entity.UpdatedAt = now;
+            entity.UpdatedBy = currentUserId;
         }
 
         private object GenerateParamById(int id)
@@ -166,6 +166,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
+                // return await connection.GetAsync<T>(id);
                 return await connection.QueryFirstOrDefaultAsync<T>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
@@ -174,6 +175,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
+                // var result = await connection.GetAsync<T>(id);
                 var result = await connection.QuerySingleOrDefaultAsync<T>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
                 if (result == null)
                     throw new KeyNotFoundException($"{_tableName} with id [{id}] could not be found.");
@@ -186,12 +188,14 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
+                // return await connection.GetAllAsync<T>();
                 return await connection.QueryAsync<T>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0");
             }
         }
 
         public virtual async Task<int> InsertAsync(T entity)
         {
+            entity.Id = default(int);
             UpdateSoftDelete(entity, false);
             UpdateAudits(entity, State.Added);
 
@@ -199,6 +203,7 @@ namespace App.Api.Repositories
 
             using (var connection = CreateConnection())
             {
+                // return await connection.InsertAsync(entity);
                 return await connection.ExecuteAsync(insertQuery, entity);
             }
         }
@@ -211,6 +216,7 @@ namespace App.Api.Repositories
 
             using (var connection = CreateConnection())
             {
+                // return await connection.UpdateAsync(entity);
                 return await connection.ExecuteAsync(updateQuery, entity);
             }
         }
@@ -219,6 +225,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
+                // return await connection.DeleteAsync(id);
                 return await connection.ExecuteAsync($"DELETE FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
@@ -255,6 +262,10 @@ namespace App.Api.Repositories
             var query = GenerateInsertQuery();
             using (var connection = CreateConnection())
             {
+                // return await connection.InsertAsync(entities);
+                // var result = await connection.UpdateAsync(entities);
+                // var result = await connection.DeleteAsync(entities);
+                // var result = await connection.DeleteAllAsync<T>();
                 inserted += await connection.ExecuteAsync(query, entities);
             }
 
