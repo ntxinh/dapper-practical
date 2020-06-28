@@ -147,9 +147,15 @@ namespace App.Api.Repositories
 
         private object GenerateParamById(int id)
         {
-            var dynamicObject = new ExpandoObject() as IDictionary<string, Object>;
-            dynamicObject.Add(PrimaryKey, id);
-            return dynamicObject;
+            // return new { Id = id };
+
+            // var dynamicObject = new ExpandoObject() as IDictionary<string, Object>;
+            // dynamicObject.Add(PrimaryKey, id);
+            // return dynamicObject;
+
+            var dynamicParameters = new DynamicParameters();
+            dynamicParameters.Add(PrimaryKey, id);
+            return dynamicParameters;
         }
 
         #endregion
@@ -160,7 +166,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.QueryFirstOrDefaultAsync<T>($"SELECT * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+                return await connection.QueryFirstOrDefaultAsync<T>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
 
@@ -168,7 +174,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                var result = await connection.QuerySingleOrDefaultAsync<T>($"SELECT * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+                var result = await connection.QuerySingleOrDefaultAsync<T>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
                 if (result == null)
                     throw new KeyNotFoundException($"{_tableName} with id [{id}] could not be found.");
 
@@ -269,6 +275,11 @@ namespace App.Api.Repositories
             {
                 return await connection.ExecuteAsync(sql, param, transaction, commandTimeout, commandType);
             }
+        }
+
+        public virtual async Task<int> ExecuteSpAsync(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null)
+        {
+            return await ExecuteAsync(sql, param, transaction, commandTimeout, commandType: CommandType.StoredProcedure);
         }
 
         #endregion
