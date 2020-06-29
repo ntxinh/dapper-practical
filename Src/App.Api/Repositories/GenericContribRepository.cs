@@ -178,6 +178,31 @@ namespace App.Api.Repositories
             return await GetAsync(entity.Id);
         }
 
+        public async Task<IEnumerable<T>> GetAsync(params T[] entities)
+        {
+            var ids = entities.Select(x => x.Id);
+            return await GetAsync(ids);
+        }
+
+        public async Task<IEnumerable<T>> GetAsync(params int[] ids)
+        {
+            return await GetAsync(ids.AsEnumerable());
+        }
+
+        public async Task<IEnumerable<T>> GetAsync(IEnumerable<T> entities)
+        {
+            var ids = entities.Select(x => x.Id);
+            return await GetAsync(ids);
+        }
+
+        public async Task<IEnumerable<T>> GetAsync(IEnumerable<int> ids)
+        {
+            using (var connection = CreateConnection())
+            {
+                return await connection.QueryAsync<T>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0 AND {PrimaryKey} IN @Ids", new { Ids = ids });
+            }
+        }
+
         public async Task<IEnumerable<T>> GetAllAsync()
         {
             using (var connection = CreateConnection())

@@ -13,6 +13,10 @@ namespace App.Api.Repositories
         // Basic operations
         Task<T> GetAsync(int id);
         Task<T> GetAsync(T entity);
+        Task<IEnumerable<T>> GetAsync(params T[] entities);
+        Task<IEnumerable<T>> GetAsync(params int[] ids);
+        Task<IEnumerable<T>> GetAsync(IEnumerable<T> entities);
+        Task<IEnumerable<T>> GetAsync(IEnumerable<int> ids);
         Task<IEnumerable<T>> GetAllAsync();
 
         Task<int> AddAsync(T entity);
