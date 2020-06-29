@@ -274,9 +274,6 @@ namespace App.Api.Repositories
         {
             ThrowIf.Argument.IsNull(entity);
 
-            if (entity == null)
-                throw new ArgumentNullException("entity");
-
             return await DeleteAsync(entity.Id);
         }
 
