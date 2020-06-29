@@ -27,14 +27,14 @@ namespace App.Api.Controllers
         [HttpGet("{id}")]
         public async Task<Customer> GetById(int id)
         {
-            var customer = await _customerRepository.FirstOrDefaultByIdAsync(id);
+            var customer = await _customerRepository.GetAsync(id);
             return customer;
         }
 
         [HttpPost]
         public async Task<int> Create(Customer customer)
         {
-            var affectedRows = await _customerRepository.InsertAsync(customer);
+            var affectedRows = await _customerRepository.AddAsync(customer);
             return affectedRows;
         }
 
@@ -53,28 +53,28 @@ namespace App.Api.Controllers
                 });
             }
 
-            var affectedRows = await _customerRepository.InsertRangeAsync(customers);
+            var affectedRows = await _customerRepository.AddAsync(customers);
             return affectedRows;
         }
 
         [HttpPut]
         public async Task<int> UpdateById(Customer customer)
         {
-            var affectedRows = await _customerRepository.UpdateByIdAsync(customer);
+            var affectedRows = await _customerRepository.UpdateAsync(customer);
             return affectedRows;
         }
 
         [HttpDelete("{id}")]
         public async Task<int> DeleteById(int id)
         {
-            var affectedRows = await _customerRepository.DeleteByIdAsync(id);
+            var affectedRows = await _customerRepository.DeleteAsync(id);
             return affectedRows;
         }
 
         [HttpDelete("DeleteSoft/{id}")]
         public async Task<int> DeleteSoftById(int id)
         {
-            var affectedRows = await _customerRepository.DeleteSoftByIdAsync(id);
+            var affectedRows = await _customerRepository.DeleteSoftAsync(id);
             return affectedRows;
         }
     }

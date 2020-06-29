@@ -5,42 +5,48 @@ using App.Api.Entities;
 
 namespace App.Api.Repositories
 {
-    public interface IGenericRepository<T> where T : BaseEntityAudit
+    public interface IGenericRepository<TEntity> where TEntity : BaseEntityAudit
     {
         // #2
         string _tableName { get; }
 
         // Basic operations
-        Task<T> FirstOrDefaultByIdAsync(int id);
-        Task<T> SingleOrDefaultByIdAsync(int id);
-        Task<IEnumerable<T>> GetAllAsync();
-        Task<int> InsertAsync(T entity);
-        Task<int> UpdateByIdAsync(T entity);
-        Task<int> DeleteByIdAsync(int id);
+        Task<TEntity> GetAsync(int id);
+        Task<TEntity> GetAsync(TEntity entity);
+        Task<IEnumerable<TEntity>> GetAsync(params TEntity[] entities);
+        Task<IEnumerable<TEntity>> GetAsync(params int[] ids);
+        Task<IEnumerable<TEntity>> GetAsync(IEnumerable<TEntity> entities);
+        Task<IEnumerable<TEntity>> GetAsync(IEnumerable<int> ids);
+        Task<IEnumerable<TEntity>> GetAllAsync();
 
-        // Task<T> Get(int id);
-        // Task<T> Get(T entity);
+        Task<int> AddAsync(TEntity entity);
+        Task<int> AddAsync(params TEntity[] entities);
+        Task<int> AddAsync(IEnumerable<TEntity> entities);
 
-        // void Add(T entity);
-        // void Add(params T[] entities);
-        // void Add(IEnumerable<T> entities);
+        Task<int> DeleteAsync(int id);
+        Task<int> DeleteAsync(TEntity entity);
+        Task<int> DeleteAsync(params TEntity[] entities);
+        Task<int> DeleteAsync(params int[] ids);
+        Task<int> DeleteAsync(IEnumerable<TEntity> entities);
+        Task<int> DeleteAsync(IEnumerable<int> ids);
+        Task<int> DeleteAllAsync();
 
-        // void Delete(T entity);
-        // void Delete(object id);
-        // void Delete(params T[] entities);
-        // void Delete(params int[] entities);
-        // void Delete(IEnumerable<T> entities);
-        // void Delete(IEnumerable<int> entities);
-
-        // void Update(T entity);
-        // void Update(params T[] entities);
-        // void Update(IEnumerable<T> entities);
+        Task<int> UpdateAsync(TEntity entity);
+        Task<int> UpdateAsync(params TEntity[] entities);
+        Task<int> UpdateAsync(IEnumerable<TEntity> entities);
 
         // Advanced operations
-        Task<int> DeleteSoftByIdAsync(int id);
-        Task<IEnumerable<T>> GetAllSoftDeletedAsync();
-        Task<int> InsertRangeAsync(IEnumerable<T> entities);
-        Task<IEnumerable<T>> QueryAsync(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null, CommandType? commandType = null);
+        Task<int> DeleteSoftAsync(int id);
+        Task<int> DeleteSoftAsync(TEntity entity);
+        Task<int> DeleteSoftAsync(params TEntity[] entities);
+        Task<int> DeleteSoftAsync(params int[] ids);
+        Task<int> DeleteSoftAsync(IEnumerable<TEntity> entities);
+        Task<int> DeleteSoftAsync(IEnumerable<int> ids);
+        Task<int> DeleteSoftAllAsync();
+
+        Task<IEnumerable<TEntity>> GetAllSoftDeletedAsync();
+
+        Task<IEnumerable<TProjection>> QueryAsync<TProjection>(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null, CommandType? commandType = null);
         Task<int> ExecuteAsync(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null, CommandType? commandType = null);
         Task<int> ExecuteSpAsync(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null);
     }

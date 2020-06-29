@@ -7,13 +7,14 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using App.Api.Common;
 using App.Api.Entities;
 using Dapper;
 using Microsoft.Extensions.Configuration;
 
 namespace App.Api.Repositories
 {
-    public abstract class GenericRepository<T> : IGenericRepository<T> where T : BaseEntityAudit
+    public abstract class GenericRepository<TEntity> : IGenericRepository<TEntity> where TEntity : BaseEntityAudit
     {
         // #1
         // private readonly string _tableName;
@@ -60,7 +61,7 @@ namespace App.Api.Repositories
             return conn;
         }
 
-        private IEnumerable<PropertyInfo> GetProperties => typeof(T).GetProperties();
+        private IEnumerable<PropertyInfo> GetProperties => typeof(TEntity).GetProperties();
 
         private static List<string> GenerateListOfProperties(IEnumerable<PropertyInfo> listOfProperties)
         {
@@ -123,12 +124,12 @@ namespace App.Api.Repositories
             Modified,
         }
 
-        private void UpdateSoftDelete(T entity, bool isDeleted)
+        private void UpdateSoftDelete(TEntity entity, bool isDeleted)
         {
             entity.IsDeleted = isDeleted;
         }
 
-        private void UpdateAudits(T entity, State state)
+        private void UpdateAudits(TEntity entity, State state)
         {
             // TODO: Get real current user id
             var currentUserId = 1;
@@ -161,36 +162,66 @@ namespace App.Api.Repositories
 
         #region Basic operations
 
-        public virtual async Task<T> FirstOrDefaultByIdAsync(int id)
+        public async Task<TEntity> GetAsync(int id)
         {
             using (var connection = CreateConnection())
             {
-                return await connection.QueryFirstOrDefaultAsync<T>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+                return await connection.QueryFirstOrDefaultAsync<TEntity>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
 
-        public virtual async Task<T> SingleOrDefaultByIdAsync(int id)
+        public async Task<TEntity> GetAsync(TEntity entity)
+        {
+            ThrowIf.Argument.IsNull(entity);
+
+            return await GetAsync(entity.Id);
+        }
+
+        public async Task<IEnumerable<TEntity>> GetAsync(params TEntity[] entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            var ids = entities.Select(x => x.Id);
+            return await GetAsync(ids);
+        }
+
+        public async Task<IEnumerable<TEntity>> GetAsync(params int[] ids)
+        {
+            ThrowIf.Argument.IsNull(ids);
+
+            return await GetAsync(ids.AsEnumerable());
+        }
+
+        public async Task<IEnumerable<TEntity>> GetAsync(IEnumerable<TEntity> entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            var ids = entities.Select(x => x.Id);
+            return await GetAsync(ids);
+        }
+
+        public async Task<IEnumerable<TEntity>> GetAsync(IEnumerable<int> ids)
+        {
+            ThrowIf.Argument.IsNull(ids);
+
+            using (var connection = CreateConnection())
+            {
+                return await connection.QueryAsync<TEntity>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0 AND {PrimaryKey} IN @Ids", new { Ids = ids });
+            }
+        }
+
+        public async Task<IEnumerable<TEntity>> GetAllAsync()
         {
             using (var connection = CreateConnection())
             {
-                var result = await connection.QuerySingleOrDefaultAsync<T>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
-                if (result == null)
-                    throw new KeyNotFoundException($"{_tableName} with id [{id}] could not be found.");
-
-                return result;
+                return await connection.QueryAsync<TEntity>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0");
             }
         }
 
-        public virtual async Task<IEnumerable<T>> GetAllAsync()
+        public async Task<int> AddAsync(TEntity entity)
         {
-            using (var connection = CreateConnection())
-            {
-                return await connection.QueryAsync<T>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0");
-            }
-        }
+            ThrowIf.Argument.IsNull(entity);
 
-        public virtual async Task<int> InsertAsync(T entity)
-        {
             entity.Id = default(int);
             UpdateSoftDelete(entity, false);
             UpdateAudits(entity, State.Added);
@@ -203,50 +234,20 @@ namespace App.Api.Repositories
             }
         }
 
-        public virtual async Task<int> UpdateByIdAsync(T entity)
+        public async Task<int> AddAsync(params TEntity[] entities)
         {
-            UpdateAudits(entity, State.Modified);
+            ThrowIf.Argument.IsNull(entities);
 
-            var updateQuery = GenerateUpdateQuery();
-
-            using (var connection = CreateConnection())
-            {
-                return await connection.ExecuteAsync(updateQuery, entity);
-            }
+            return await AddAsync(entities.AsEnumerable());
         }
 
-        public virtual async Task<int> DeleteByIdAsync(int id)
+        public async Task<int> AddAsync(IEnumerable<TEntity> entities)
         {
-            using (var connection = CreateConnection())
-            {
-                return await connection.ExecuteAsync($"DELETE FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
-            }
-        }
+            ThrowIf.Argument.IsNull(entities);
 
-        #endregion
-
-        #region Advanced operations
-
-        public virtual async Task<int> DeleteSoftByIdAsync(int id)
-        {
-            using (var connection = CreateConnection())
-            {
-                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
-            }
-        }
-
-        public virtual async Task<IEnumerable<T>> GetAllSoftDeletedAsync()
-        {
-            using (var connection = CreateConnection())
-            {
-                return await connection.QueryAsync<T>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 1");
-            }
-        }
-
-        public virtual async Task<int> InsertRangeAsync(IEnumerable<T> entities)
-        {
             foreach (var entity in entities)
             {
+                entity.Id = default(int);
                 UpdateSoftDelete(entity, false);
                 UpdateAudits(entity, State.Added);
             }
@@ -261,11 +262,170 @@ namespace App.Api.Repositories
             return inserted;
         }
 
-        public virtual async Task<IEnumerable<T>> QueryAsync(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null, CommandType? commandType = null)
+        public async Task<int> DeleteAsync(int id)
         {
             using (var connection = CreateConnection())
             {
-                return await connection.QueryAsync<T>(sql, param, transaction, commandTimeout, commandType);
+                return await connection.ExecuteAsync($"DELETE FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+            }
+        }
+
+        public async Task<int> DeleteAsync(TEntity entity)
+        {
+            ThrowIf.Argument.IsNull(entity);
+
+            if (entity == null)
+                throw new ArgumentNullException("entity");
+
+            return await DeleteAsync(entity.Id);
+        }
+
+        public async Task<int> DeleteAsync(params TEntity[] entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            var ids = entities.Select(x => x.Id);
+            return await DeleteAsync(ids);
+        }
+
+        public async Task<int> DeleteAsync(params int[] ids)
+        {
+            ThrowIf.Argument.IsNull(ids);
+
+            return await DeleteAsync(ids.AsEnumerable());
+        }
+
+        public async Task<int> DeleteAsync(IEnumerable<TEntity> entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            var ids = entities.Select(x => x.Id);
+            return await DeleteAsync(ids);
+        }
+
+        public async Task<int> DeleteAsync(IEnumerable<int> ids)
+        {
+            ThrowIf.Argument.IsNull(ids);
+
+            using (var connection = CreateConnection())
+            {
+                return await connection.ExecuteAsync($"DELETE FROM {_tableName} WHERE {PrimaryKey} IN @Ids", new { Ids = ids });
+            }
+        }
+
+        public async Task<int> DeleteAllAsync()
+        {
+            using (var connection = CreateConnection())
+            {
+                return await connection.ExecuteAsync($"DELETE FROM {_tableName}");
+            }
+        }
+
+        public async Task<int> UpdateAsync(TEntity entity)
+        {
+            ThrowIf.Argument.IsNull(entity);
+
+            UpdateAudits(entity, State.Modified);
+
+            var updateQuery = GenerateUpdateQuery();
+
+            using (var connection = CreateConnection())
+            {
+                return await connection.ExecuteAsync(updateQuery, entity);
+            }
+        }
+
+        public Task<int> UpdateAsync(params TEntity[] entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            // TODO: Implement
+            throw new NotImplementedException();
+        }
+
+        public Task<int> UpdateAsync(IEnumerable<TEntity> entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            // TODO: Implement
+            throw new NotImplementedException();
+        }
+
+        #endregion
+
+        #region Advanced operations
+
+        public async Task<int> DeleteSoftAsync(int id)
+        {
+            using (var connection = CreateConnection())
+            {
+                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+            }
+        }
+
+        public async Task<int> DeleteSoftAsync(TEntity entity)
+        {
+            ThrowIf.Argument.IsNull(entity);
+
+            return await DeleteSoftAsync(entity.Id);
+        }
+
+        public async Task<int> DeleteSoftAsync(params TEntity[] entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            var ids = entities.Select(x => x.Id);
+
+            return await DeleteSoftAsync(ids);
+        }
+
+        public async Task<int> DeleteSoftAsync(params int[] ids)
+        {
+            ThrowIf.Argument.IsNull(ids);
+
+            return await DeleteSoftAsync(ids.AsEnumerable());
+        }
+
+        public async Task<int> DeleteSoftAsync(IEnumerable<TEntity> entities)
+        {
+            ThrowIf.Argument.IsNull(entities);
+
+            var ids = entities.Select(x => x.Id);
+
+            return await DeleteSoftAsync(ids);
+        }
+
+        public async Task<int> DeleteSoftAsync(IEnumerable<int> ids)
+        {
+            ThrowIf.Argument.IsNull(ids);
+
+            using (var connection = CreateConnection())
+            {
+                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey} IN @Ids", new { Ids = ids });
+            }
+        }
+
+        public async Task<int> DeleteSoftAllAsync()
+        {
+            using (var connection = CreateConnection())
+            {
+                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1");
+            }
+        }
+
+        public virtual async Task<IEnumerable<TEntity>> GetAllSoftDeletedAsync()
+        {
+            using (var connection = CreateConnection())
+            {
+                return await connection.QueryAsync<TEntity>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 1");
+            }
+        }
+
+        public virtual async Task<IEnumerable<TProjection>> QueryAsync<TProjection>(string sql, object param = null, IDbTransaction transaction = null, int? commandTimeout = null, CommandType? commandType = null)
+        {
+            using (var connection = CreateConnection())
+            {
+                return await connection.QueryAsync<TProjection>(sql, param, transaction, commandTimeout, commandType);
             }
         }
 

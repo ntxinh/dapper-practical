@@ -21,7 +21,7 @@ namespace App.Api.Controllers
         [HttpGet]
         public async Task<IEnumerable<Todo>> Get()
         {
-            await _todoRepository.InsertAsync(new Todo
+            await _todoRepository.AddAsync(new Todo
             {
                 Name = "Todo 1",
                 Description = "",
