@@ -20,11 +20,12 @@ namespace App.Api.Repositories
         // private readonly string _tableName;
 
         // #2
-        public abstract string _tableName { get; }
+        public virtual string _tableName { get; }
 
         private readonly IConfiguration _config;
         private const string PrimaryKey = nameof(BaseEntity.Id);
         private const string SoftDeletedColumn = nameof(BaseEntity.IsDeleted);
+        private string TableName => string.IsNullOrWhiteSpace(_tableName) ? GenerateTableName() : _tableName;
 
         // #1
         // protected GenericRepository(string tableName, IConfiguration config)
@@ -73,9 +74,21 @@ namespace App.Api.Repositories
                     select prop.Name).ToList();
         }
 
+        private string GenerateTableName(string prefix = "", string subfix = "")
+        {
+            dynamic attributeTable = typeof(TEntity).GetCustomAttributes(false)
+                .SingleOrDefault(attr => attr.GetType().Name == "TableAttribute");
+
+            var tableName = attributeTable != null ? attributeTable.Name : typeof(TEntity).Name;
+
+            var tableNameWithPlural = Inflector.Inflector.Pluralize(tableName);
+
+            return $"{prefix}{tableNameWithPlural}{subfix}";
+        }
+
         private string GenerateInsertQuery()
         {
-            var insertQuery = new StringBuilder($"INSERT INTO {_tableName} ");
+            var insertQuery = new StringBuilder($"INSERT INTO {TableName} ");
 
             insertQuery.Append("(");
 
@@ -99,7 +112,7 @@ namespace App.Api.Repositories
 
         private string GenerateUpdateQuery()
         {
-            var updateQuery = new StringBuilder($"UPDATE {_tableName} SET ");
+            var updateQuery = new StringBuilder($"UPDATE {TableName} SET ");
 
             var properties = GenerateListOfProperties(GetProperties);
             properties.Remove(PrimaryKey);
@@ -166,7 +179,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.QueryFirstOrDefaultAsync<TEntity>($"SELECT TOP 1 * FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+                return await connection.QueryFirstOrDefaultAsync<TEntity>($"SELECT TOP 1 * FROM {TableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
 
@@ -206,7 +219,7 @@ namespace App.Api.Repositories
 
             using (var connection = CreateConnection())
             {
-                return await connection.QueryAsync<TEntity>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0 AND {PrimaryKey} IN @Ids", new { Ids = ids });
+                return await connection.QueryAsync<TEntity>($"SELECT * FROM {TableName} WHERE {SoftDeletedColumn} = 0 AND {PrimaryKey} IN @Ids", new { Ids = ids });
             }
         }
 
@@ -214,7 +227,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.QueryAsync<TEntity>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 0");
+                return await connection.QueryAsync<TEntity>($"SELECT * FROM {TableName} WHERE {SoftDeletedColumn} = 0");
             }
         }
 
@@ -266,7 +279,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.ExecuteAsync($"DELETE FROM {_tableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+                return await connection.ExecuteAsync($"DELETE FROM {TableName} WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
 
@@ -306,7 +319,7 @@ namespace App.Api.Repositories
 
             using (var connection = CreateConnection())
             {
-                return await connection.ExecuteAsync($"DELETE FROM {_tableName} WHERE {PrimaryKey} IN @Ids", new { Ids = ids });
+                return await connection.ExecuteAsync($"DELETE FROM {TableName} WHERE {PrimaryKey} IN @Ids", new { Ids = ids });
             }
         }
 
@@ -314,7 +327,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.ExecuteAsync($"DELETE FROM {_tableName}");
+                return await connection.ExecuteAsync($"DELETE FROM {TableName}");
             }
         }
 
@@ -356,7 +369,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
+                return await connection.ExecuteAsync($"UPDATE {TableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey}=@{PrimaryKey}", GenerateParamById(id));
             }
         }
 
@@ -398,7 +411,7 @@ namespace App.Api.Repositories
 
             using (var connection = CreateConnection())
             {
-                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey} IN @Ids", new { Ids = ids });
+                return await connection.ExecuteAsync($"UPDATE {TableName} SET {SoftDeletedColumn} = 1 WHERE {PrimaryKey} IN @Ids", new { Ids = ids });
             }
         }
 
@@ -406,7 +419,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.ExecuteAsync($"UPDATE {_tableName} SET {SoftDeletedColumn} = 1");
+                return await connection.ExecuteAsync($"UPDATE {TableName} SET {SoftDeletedColumn} = 1");
             }
         }
 
@@ -414,7 +427,7 @@ namespace App.Api.Repositories
         {
             using (var connection = CreateConnection())
             {
-                return await connection.QueryAsync<TEntity>($"SELECT * FROM {_tableName} WHERE {SoftDeletedColumn} = 1");
+                return await connection.QueryAsync<TEntity>($"SELECT * FROM {TableName} WHERE {SoftDeletedColumn} = 1");
             }
         }
 

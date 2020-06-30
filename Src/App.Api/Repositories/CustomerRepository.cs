@@ -14,6 +14,6 @@ namespace App.Api.Repositories
         public CustomerRepository(IConfiguration config) : base(config)
         {
         }
-        public override string _tableName { get; } = "Customers";
+        // public override string _tableName { get; } = "Customers";
     }
 }
